@@ -3,3 +3,4 @@ openai
 python-dotenv
 PyMuPDF
 python-docx
+gTTS
