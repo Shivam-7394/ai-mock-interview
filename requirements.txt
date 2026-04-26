@@ -4,3 +4,4 @@ python-dotenv
 PyMuPDF
 python-docx
 gTTS
+audiorecorder
