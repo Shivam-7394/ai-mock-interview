@@ -1,5 +1,4 @@
 from tts_utils import speak_text
-from audio_utils import record_audio, speech_to_text
 import streamlit as st
 import time
 import re
@@ -37,9 +36,6 @@ h1 {
 }
 </style>
 """, unsafe_allow_html=True)
-
-# ---------------- AVATAR ----------------
-avatar = "https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif"
 
 # ---------------- TYPEWRITER ----------------
 def typewriter(text, speed=0.01):
@@ -130,22 +126,9 @@ with st.sidebar:
     st.write("- Be confident")
     st.write("- Use real examples")
 
-# ---------------- MODE ----------------
-mode = st.radio(
-    "Choose Interview Mode",
-    ["📝 Text Interview", "🎤 Voice Interview"],
-    horizontal=True
-)
-
 # ---------------- SESSION ----------------
 if "questions" not in st.session_state:
     st.session_state.questions = []
-
-if "current_q" not in st.session_state:
-    st.session_state.current_q = 0
-
-if "started" not in st.session_state:
-    st.session_state.started = False
 
 if "scores" not in st.session_state:
     st.session_state.scores = {}
@@ -159,127 +142,51 @@ if st.button("🔄 Reset"):
     st.rerun()
 
 # =========================
-# 📝 TEXT INTERVIEW
+# 📝 TEXT INTERVIEW ONLY
 # =========================
-if mode == "📝 Text Interview":
 
-    file = st.file_uploader("Upload Resume", type=["pdf", "docx"], key="text")
+file = st.file_uploader("Upload Resume", type=["pdf", "docx"])
 
-    if file:
-        resume_text = extract_text(file)
-        st.success("Resume uploaded!")
+if file:
+    resume_text = extract_text(file)
+    st.success("Resume uploaded!")
 
-        if st.button("Generate Questions", key="gen_text"):
+    if st.button("Generate Questions"):
 
-            q_text = generate_questions(resume_text)
-            questions = [q.strip() for q in q_text.split("\n") if q.strip()]
+        q_text = generate_questions(resume_text)
+        questions = [q.strip() for q in q_text.split("\n") if q.strip()]
 
-            st.session_state.questions = questions
-            st.session_state.scores = {}
-            st.session_state.answers = {}
+        st.session_state.questions = questions
+        st.session_state.scores = {}
+        st.session_state.answers = {}
 
-    if st.session_state.questions:
+if st.session_state.questions:
 
-        for i, q in enumerate(st.session_state.questions[:5]):
+    for i, q in enumerate(st.session_state.questions[:5]):
 
-            st.markdown(f"<div class='question-box'><b>Q{i+1}:</b> {q}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='question-box'><b>Q{i+1}:</b> {q}</div>", unsafe_allow_html=True)
 
-            ans = st.text_input(f"Answer {i+1}", key=f"text_{i}")
+        ans = st.text_input(f"Answer {i+1}", key=f"text_{i}")
 
-            if st.button(f"Evaluate {i+1}", key=f"eval_text_{i}"):
+        if st.button(f"Evaluate {i+1}"):
 
-                st.session_state.answers[i] = ans
+            st.session_state.answers[i] = ans
 
-                feedback = evaluate_answer(q, ans)
-                st.info(feedback)
+            feedback = evaluate_answer(q, ans)
+            st.info(feedback)
 
-                conf = confidence_score(ans)
-                emotion = detect_emotion(ans)
+            conf = confidence_score(ans)
+            emotion = detect_emotion(ans)
 
-                st.info(f"Confidence: {conf}")
-                st.info(f"Emotion: {emotion}")
-                emotion_meter(emotion)
+            st.info(f"Confidence: {conf}")
+            st.info(f"Emotion: {emotion}")
+            emotion_meter(emotion)
 
-                match = re.search(r'\b(10|[0-9])\b', feedback)
-                if match:
-                    score = int(match.group())
-                    st.session_state.scores[i] = score
-                    avatar_reaction(score)
-
-# =========================
-# 🎤 VOICE INTERVIEW
-# =========================
-elif mode == "🎤 Voice Interview":
-
-    file = st.file_uploader("Upload Resume", type=["pdf", "docx"], key="voice")
-
-    if file:
-        resume_text = extract_text(file)
-
-        if st.button("Start Voice Interview", key="start_voice"):
-
-            q_text = generate_questions(resume_text)
-            questions = [q.strip() for q in q_text.split("\n") if q.strip()]
-
-            st.session_state.questions = questions
-            st.session_state.current_q = 0
-            st.session_state.started = True
-            st.session_state.scores = {}
-            st.session_state.answers = {}
-
-            st.rerun()
-
-    if st.session_state.get("started"):
-
-        i = st.session_state.current_q
-
-        if i < len(st.session_state.questions):
-
-            q = st.session_state.questions[i]
-
-            col1, col2 = st.columns([1, 3])
-
-            with col1:
-                st.image(avatar)
-
-            with col2:
-                typewriter(q)
-
-            audio_file = speak_text(q)
-            if audio_file:
-                st.audio(audio_file)
-
-            audio = record_audio(key=f"audio_{i}")
-
-            if audio and len(audio) > 0:
-
-                text = speech_to_text(audio)
-                st.success(f"You said: {text}")
-
-                st.session_state.answers[i] = text
-
-                feedback = evaluate_answer(q, text)
-                st.info(feedback)
-
-                conf = confidence_score(text)
-                emotion = detect_emotion(text)
-
-                st.info(f"Confidence: {conf}")
-                st.info(f"Emotion: {emotion}")
-                emotion_meter(emotion)
-
-                match = re.search(r'\b(10|[0-9])\b', feedback)
-                if match:
-                    score = int(match.group())
-                    st.session_state.scores[i] = score
-                    avatar_reaction(score)
-
-                st.session_state.current_q += 1
-                time.sleep(1)
-                st.rerun()
-
-        else:
-            st.success("🎉 Interview Completed!")
+            match = re.search(r'\b(10|[0-9])\b', feedback)
+            if match:
+                score = int(match.group())
+                st.session_state.scores[i] = score
+                avatar_reaction(score)
 
 # =========================
 # 📊 DASHBOARD
@@ -294,7 +201,6 @@ if st.session_state.scores:
     st.metric("Average Score", f"{avg:.1f}/10")
     st.line_chart(scores)
 
-    # Weak Areas
     if avg < 4:
         st.error("⚠️ Weak Areas: Communication + Structure")
     elif avg < 7:
@@ -302,7 +208,6 @@ if st.session_state.scores:
     else:
         st.success("✅ Strong performance overall")
 
-    # AI Summary
     if st.button("🧠 Generate AI Summary"):
 
         summary = generate_summary(
@@ -314,7 +219,6 @@ if st.session_state.scores:
         st.success("📋 AI Summary")
         st.write(summary)
 
-        # Download report
         report = f"AI MOCK INTERVIEW REPORT\n\nAverage Score: {avg:.1f}/10\n\n"
 
         for i in st.session_state.answers:
