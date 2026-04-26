@@ -2,9 +2,14 @@ import os
 from dotenv import load_dotenv
 import google.generativeai as genai
 
+# Load environment variables
 load_dotenv()
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+# Configure Gemini API
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+# Load model
+model = genai.GenerativeModel("gemini-2.5-flash")
 
 
 def generate_questions(resume_text):
@@ -21,10 +26,7 @@ Resume:
 {resume_text}
 """
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
+        response = model.generate_content(prompt)
 
         return response.text
 
@@ -48,10 +50,7 @@ Question: {question}
 Answer: {answer}
 """
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
+        response = model.generate_content(prompt)
 
         return response.text
 
